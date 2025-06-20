@@ -89,6 +89,18 @@ Latex作为专业的数学排版工具受到广大用户的喜爱，通过Latex�
 	\caption{工作流程}\label{工作流程}
 \end{figure}
 
+\section{开发框架选择}
+
+1. 后端Python + Flask：选择 Python 作为后端开发语言，得益于其语法简洁、高效灵活以及丰富的第三方库生态，能够大幅提升功能实现和数据处理的效率。Flask 作为一个轻量级的 Web 框架，其简单易用的路由设计、灵活的扩展方式和较低的入门门槛，能够满足试题库系统在快速开发、调试和后期维护方面的需求。
+
+2. 前端技术Vue 3 + TypeScript：前端部分选用了 Vue 3 框架，借助其组合式 API 能够更清晰地管理组件逻辑，实现高效复用和模块化开发。结合 TypeScript 的静态类型检查，进一步提高了代码的健壮性与可维护性，避免了运行时常见的错误，确保前端页面在交互性和动态显示方面的可靠性与流畅性。
+
+3. 数据库MySQL：在数据存储方面，选用了成熟稳定的 MySQL 数据库。MySQL 以其卓越的性能、良好的事务支持和丰富的生态系统为系统提供可靠的数据管理后盾。对于数学试题库这种需要高效存储和快速查询的大规模数据场景，MySQL 能够提供稳定的性能保障，同时其广泛的社区支持和完善的文档也使得后续维护和优化更加便捷。
+
+4. 数学公式渲染KaTeX：为了在网页上精准、迅速地展示 LaTeX 公式，我们采用了 KaTeX 渲染引擎。相较于其他渲染方案如 MathJax，KaTeX 拥有更高的展示速度和极强的兼容性，设计目标就是实现快速、轻量的公式渲染，因此在大量公式的实时显示中能显著降低加载延迟，能够在保证复杂数学公式准确显示的同时，有效降低页面加载压力，为用户提供流畅的数学体验。不过，为了追求效率，KaTeX 在支持 LaTeX 常用语法的同时放弃了部分高级扩展和定制化支持。但数学试题库系统主要需求是快速渲染大批量、标准数学公式，选用 KaTeX更好。
+
+综合来看，该数学试题库系统采用 Python+Flask 构建后端服务，利用 Vue 3+TypeScript 构筑高度交互、类型安全的前端界面，并辅以 MySQL 数据库实现数据的高效存储与检索，最后通过 KaTeX 实现数学公式的高质量渲染。整体架构实现了前后端的高效分离，既满足当前业务需求，也为未来功能扩展和系统维护奠定了坚实基础。
+
 \section{数据库设计}
 
 主要设计了3张表：problems表，user表，tags表分别用于存储题目信息，用户信息，题目标签，其结构如下表所示：
@@ -149,89 +161,22 @@ Latex作为专业的数学排版工具受到广大用户的喜爱，通过Latex�
     \caption{数据库E-R图}\label{数据库E-R图}
 \end{figure}
 
-数据库结构SQL源代码：
-
-\begin{lstlisting}
-SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-
--- ----------------------------
--- Table structure for problems
--- ----------------------------
-DROP TABLE IF EXISTS `problems`;
-CREATE TABLE `problems`  (
-  `id` int NOT NULL,
-  `content` varchar(10000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `tag` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `Uploader` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `Upload_time` datetime NOT NULL,
-  PRIMARY KEY (`id` DESC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for tags
--- ----------------------------
-DROP TABLE IF EXISTS `tags`;
-CREATE TABLE `tags`  (
-  `id` int NOT NULL,
-  `tag_name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
-
--- ----------------------------
--- Table structure for user
--- ----------------------------
-DROP TABLE IF EXISTS `user`;
-CREATE TABLE `user`  (
-  `id` int NOT NULL COMMENT '用户id',
-  `username` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '用户名',
-  `telephone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '电话号码',
-  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `role` int NOT NULL COMMENT '0表示用户，1表示管理员',
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
-
-SET FOREIGN_KEY_CHECKS = 1;
-\end{lstlisting}
-
 \section{后端设计}
 
 使用Python + flask为系统提供后端支持。主要完成了下述功能：1、用户登录；2、用户注册(发送验证码的功能需要付费部署)；3、获取用户信息；4、更改密码；5、获取所有题目；6、上传题目；7、获取所有标签。
 
-后端代码基本配置：
+\subsection{后端基本配置}
+
+后端运行在127.0.0.1:5000上，而前端则运行在localhost:5173上，虽然127.0.0.1和localhost都是指本地主机地址，但为了防止出现跨域报错，还是直接配置后端允许所有来源访问比较好，配置的代码如下：
+\begin{lstlisting}
+CORS(app, resources={r"/*": {"origins": "*"}})
+\end{lstlisting}
+
+在后端代码中还定义了两个工具函数：\verb|get_token_phone|和\verb|get_token_user|，分别用于从token中获取电话和用户名信息。
+
+最后，定义了两个类：Problem类和Tag类，它们的成员变量与数据库中的表结构一一对应，定义这两个类是为了方便上传题目和上传新标签(通过直接对数据库操作实现，但仍然保留以便随时拓展)两个方法的执行。定义这两个类的代码如下所示：
 
 \begin{lstlisting}
-from flask import Flask, jsonify, request
-from sqlalchemy import text
-
-from config import BaseConfig
-from flask_sqlalchemy import SQLAlchemy
-import auth
-# from aliyunsms.sms_send import send_sms
-import datetime
-from redis import StrictRedis
-
-# 创建redis对象
-redis_store = StrictRedis(host=BaseConfig.REDIS_HOST, port=BaseConfig.REDIS_PORT, decode_responses=True)
-
-# 跨域
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # 允许所有来源访问
-
-# 添加配置数据库
-app.config.from_object(BaseConfig)
-# 初始化拓展,app到数据库的ORM映射
-db = SQLAlchemy(app)
-
-# 检查数据库连接是否成功
-with app.app_context():
-    with db.engine.connect() as conn:
-        rs = conn.execute(text("select 1"))
-        # print(rs.fetchone())
-
-# 定义问题模型，对应数据库中的 problems 表
 class Problem(db.Model):
     __tablename__ = 'problems'
     id = db.Column(db.Integer, primary_key=True)
@@ -244,188 +189,22 @@ class Problem(db.Model):
 class Tag(db.Model):
     __tablename__ = 'tags'
     id = db.Column(db.Integer, primary_key=True)
-    tag_name = db.Column(db.String, nullable=False, unique=True)  # 确保标签唯一
-
-# 获取手机号
-def get_token_phone(token):
-    data = auth.decode_func(token)
-    phone = data['telephone']
-    return phone
-
-# 获取用户名
-def get_token_username(token):
-    data = auth.decode_func(token)
-    username = data.get("username")
-    if username:
-        return username
-    # 如果没有 "username" 字段，可以选择返回默认值 "anonymous"
-    return "anonymous"
+    tag_name = db.Column(db.String, nullable=False, unique=True)
 \end{lstlisting}
 
-用户登录功能源码：
-\begin{lstlisting}
-@app.route("/user/login", methods=["POST"])
-def user_login():
-    # print(request.json)
-    userTelephone = request.json.get("userTelephone").strip()
-    password = request.json.get("password").strip()
-    sql = text('SELECT * FROM user WHERE telephone = :telephone AND password = :password')
-    params = {'telephone': userTelephone, 'password': password}
-    data = db.session.execute(sql, params).first()
-    # print(data)
-    if data is not None:
-        user = {'id': data[0], 'username': data[1], 'telephone': data[2], 'password': data[3]}
-        # 生成token
-        token = auth.encode_func(user)
-        # print(token)
-        return jsonify({"code": 200, "msg": "登录成功", "token": token, "role": data[4]})
-    else:
-        return jsonify({"code": 1000, "msg": "用户名或密码错误"})
-\end{lstlisting}
+\subsection{后端接口逻辑}
 
-用户注册功能源码由于需要实际部署，无法验证可行性，所以就不再列出
+1、用户登录方法\verb|user_login|：请求方式为POST，先从前端获取到用户输入的电话号码和密码信息，将获取到的信息加入到sql查询语句中，作为条件查询where的条件，如果查询到的数据非空，则说明输入的电话号码和密码正确，那就返回登录成功的信息并生成token一并返回。否则，输入的电话号码或者密码与数据库中的记录不匹配，则返回用户名或密码错误的信息。
 
-获取用户信息功能源码：
-\begin{lstlisting}
-@app.route("/user/usermsg", methods=["GET"])
-def usermsg():
-    telephone = get_token_phone(request.headers.get('token'))
-    query = text('SELECT username, telephone FROM user WHERE telephone=:telephone')
-    result = db.session.execute(query, {'telephone': telephone}).fetchone()
+2、获取用户信息方法\verb|usermsg|：请求方式为GET，首先从请求头中提取token，然后调用工具函数\verb|get_token_phone|获取当前用户电话号码，将获取到的电话号码加入到sql查询中，从数据库中查询电话号码对应的用户信息。若成功查询到记录，则返回查询到的数据，否则返回查询失败的消息。
 
-    if result:
-            data = dict(username=result.username, telephone=result.telephone)
-            return jsonify(status=200, data=data)
-    else:
-        return jsonify(status=404, message="User not found")
-\end{lstlisting}
+3. 修改密码方法：\texttt{user\_pwd\_change}：请求方式为 POST，使用异常处理机制包裹所有的执行逻辑，防止数据库错误或 token 解码出错时直接崩溃。一旦报错，使用 \texttt{rollback()} 撤销数据库未提交的修改，避免脏数据。具体的执行逻辑为：先从前端请求体 JSON 中获取旧密码 \texttt{old\_pwd} 和新密码 \texttt{new\_pwd}，再从请求头中获取 token，用于身份校验。如果前端未传 token，直接返回 400 Bad Request。若成功获取到 token，则使用工具函数 \texttt{get\_token\_phone} 获取当前用户电话号码。电话号码和旧密码将作为查询条件，然后使用原生 SQL 检查手机号 + 原始密码是否存在于数据库。采用参数化查询的方式以防止 SQL 注入。如果查询到的数据为空，则说明原密码错误，返回错误信息。若数据不为空，则通过 update 语句更新数据库中的对应记录，完成密码更新。
 
-更改密码功能源码：
-\begin{lstlisting}
-@app.route("/user/pwd_chg", methods=["POST"])
-def user_pwd_chg():
-    try:
-        data = request.get_json()
-        new_pwd = data.get('new_pwd')
-        old_pwd = data.get('old_pwd')
-        token = request.headers.get('token')
-        if not token:
-            return jsonify(status=400, msg='缺少 token'), 400
+4、获取所有题目方法\texttt{get\_problems}：请求方式为GET，同样使用异常处理机制\texttt{try-except}机制包裹整个执行逻辑，防止执行 SQL 时出错导致程序崩溃，同时若发生异常，则返回具体的异常信息，方便调试。具体的执行逻辑为：从数据库problems表中查询所有的题目记录，遍历 查询结果，每一条记录是一个元组。构造python字典，使得每条题目的信息结构化。最后返回json格式的数据。
 
-        phone = get_token_phone(token)
+5、上传题目方法\texttt{add\_problem}：请求方式为POST。首先通过 \texttt{request.get\_json()} 获取请求体中的数据，如果没有数据则返回 400 错误。接着从数据中提取题目内容 content（必填）、标签 tag（默认为“无标签”）、上传人 Uploader（默认“anonymous”，但实际使用的是从 token 中解析的用户名）以及上传时间字符串 Upload\_time。对 content 和 Upload\_time 进行非空校验，如果缺失则返回 400 错误。上传时间字符串采用 ISO 格式，通过 \texttt{datetime.datetime.fromisoformat()} 解析为 datetime 对象，解析失败会返回格式错误的 400 响应。然后查询数据库 problems 表当前最大 id，以便手动分配新题目的唯一 ID。通过请求头中的 token，调用工具函数 \texttt{get\_token\_username()} 获取当前登录用户的用户名，确保上传人信息的准确性。构造新的 ORM 对象 Problem(通过自定义的Problem类)，包含新生成的 ID、题目内容、标签、上传者用户名和上传时间。将该对象添加到数据库会话并提交事务，若数据库操作失败则回滚并返回错误。最终返回新题目的 ID 表示上传成功。题目内容中的 LaTeX 代码作为普通字符串直接存储，后续由前端或渲染程序负责正确解析和显示，保证了 LaTeX 代码的原样保存和灵活使用。
 
-        # 参数化查询，避免使用字符串拼接
-        query = text('SELECT * FROM user WHERE telephone=:phone AND password=:old_pwd')
-        user_data = db.session.execute(query, {"phone": phone, "old_pwd": old_pwd}).fetchall()
-        if not user_data:
-            return jsonify(status=1000, msg="原始密码错误")
-        else:
-            update_query = text('UPDATE user SET password=:new_pwd WHERE telephone=:phone')
-            db.session.execute(update_query, {"new_pwd": new_pwd, "phone": phone})
-            db.session.commit()
-            return jsonify(status=200, msg="修改成功")
-    except Exception as e:
-        db.session.rollback()
-        print("Error in user_pwd_chg:", e)
-        return jsonify(status=500, msg=str(e)), 500
-\end{lstlisting}
-
-
-获取题目功能源码：
-\begin{lstlisting}
-@app.route("/api/problems", methods=["GET"])
-def get_problems():
-    try:
-        sql = text("SELECT id, content, tag, Uploader, Upload_time FROM problems")
-        result = db.session.execute(sql).fetchall()
-        problems = []
-        for row in result:
-            problems.append({
-                'id': row[0],
-                'content': row[1],
-                'tag': row[2],
-                'Uploader': row[3],
-                'Upload_time': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None
-            })
-        return jsonify({"status": 200, "data": problems})
-    except Exception as e:
-        return jsonify({"status": 500, "msg": str(e)})
-\end{lstlisting}
-
-
-上传题目功能源码：
-\begin{lstlisting}
-@app.route("/api/problems", methods=["POST"])
-def add_problem():
-    data = request.get_json()
-    if not data:
-        return jsonify({"status": 400, "message": "No input data provided"}), 400
-
-    content = data.get("content")
-    tag = data.get("tag", "无标签")
-    Uploader = data.get("Uploader", "anonymous")
-    Upload_time_str = data.get("Upload_time")
-
-    # 检查必要字段
-    if not content:
-        return jsonify({"status": 400, "message": "内容不能为空"}), 400
-    if not Upload_time_str:
-        return jsonify({"status": 400, "message": "Upload_time 不能为空"}), 400
-
-    # 将上传时间字符串转换为 datetime 对象
-    try:
-        Upload_time = datetime.datetime.fromisoformat(Upload_time_str)
-    except Exception as e:
-        return jsonify({"status": 400, "message": f"Upload_time 格式错误: {str(e)}"}), 400
-
-    # 查询当前表中的最大 id
-    try:
-        result = db.session.execute(text("SELECT MAX(id) FROM problems")).fetchone()
-        max_id = result[0] if result[0] is not None else 0
-    except Exception as e:
-        return jsonify({"status": 500, "message": f"查询最大ID失败: {str(e)}"}), 500
-
-    new_id = max_id + 1
-
-    # 通过请求头中的 token 来获取当前登录用户的用户名
-    token = request.headers.get("token")
-    username = get_token_username(token)  # 保证这里获取的是正确的用户名
-
-    # 创建新的题目记录时，手动指定 id
-    new_problem = Problem(
-        id=new_id,
-        content=content,
-        tag=tag,
-        Uploader=username,
-        Upload_time=Upload_time
-    )
-
-    try:
-        db.session.add(new_problem)
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"status": 500, "message": f"写入数据库出错: {str(e)}"}), 500
-
-    return jsonify({
-        "status": 200,
-        "message": "题目上传成功",
-        "id": new_problem.id
-    }), 200
-\end{lstlisting}
-
-获取所有标签功能源码：
-\begin{lstlisting}
-@app.route("/api/tags", methods=["GET"])
-def get_tags():
-    try:
-        sql = text("SELECT id, tag_name FROM tags")
-        result = db.session.execute(sql).fetchall()
-        tag_list = [{"id": row[0], "tag_name": row[1]} for row in result]
-        return jsonify({"status": 200, "data": tag_list})
-    except Exception as e:
-        return jsonify({"status": 500, "msg": str(e)})
-\end{lstlisting}
+6、获取所有标签方法\texttt{get\_tags}：请求方式为GET，通过执行一条 SQL 语句 SELECT id, tag\_name FROM tags，获取标签表中所有标签的 ID 和名称。查询结果使用 fetchall() 方法获取所有记录，并将每条记录封装成字典格式，包含 id 和 tag\_name 两个字段，最终组成一个标签列表。接口成功执行时返回包含标签列表的 JSON 数据。若在查询过程中出现异常，接口会捕获异常并返回错误信息。
 
 \section{前端设计}
 
@@ -828,5 +607,291 @@ function handleProblemUploaded() {
 	\includegraphics[width=\linewidth]{./图片/上传题目界面.png}
 	\caption{上传题目界面}\label{上传题目界面}
 \end{figure}
+
+\section*{附录}
+
+SQL脚本：
+\begin{lstlisting}
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for problems
+-- ----------------------------
+DROP TABLE IF EXISTS `problems`;
+CREATE TABLE `problems`  (
+  `id` int NOT NULL,
+  `content` varchar(10000) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `tag` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Uploader` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Upload_time` datetime NOT NULL,
+  PRIMARY KEY (`id` DESC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for tags
+-- ----------------------------
+DROP TABLE IF EXISTS `tags`;
+CREATE TABLE `tags`  (
+  `id` int NOT NULL,
+  `tag_name` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for user
+-- ----------------------------
+DROP TABLE IF EXISTS `user`;
+CREATE TABLE `user`  (
+  `id` int NOT NULL COMMENT '用户id',
+  `username` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '用户名',
+  `telephone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '电话号码',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `role` int NOT NULL COMMENT '0表示用户，1表示管理员',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+SET FOREIGN_KEY_CHECKS = 1;
+\end{lstlisting}
+
+完整后端代码：
+
+\begin{lstlisting}
+from flask import Flask, jsonify, request
+from sqlalchemy import text
+
+from config import BaseConfig
+from flask_sqlalchemy import SQLAlchemy
+import auth
+# from aliyunsms.sms_send import send_sms
+import datetime
+from redis import StrictRedis
+
+# 创建redis对象
+redis_store = StrictRedis(host=BaseConfig.REDIS_HOST, port=BaseConfig.REDIS_PORT, decode_responses=True)
+
+# 跨域
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})  # 允许所有来源访问
+
+# 添加配置数据库
+app.config.from_object(BaseConfig)
+# 初始化拓展,app到数据库的ORM映射
+db = SQLAlchemy(app)
+
+# 检查数据库连接是否成功
+with app.app_context():
+    with db.engine.connect() as conn:
+        rs = conn.execute(text("select 1"))
+        # print(rs.fetchone())
+
+# 定义问题模型，对应数据库中的 problems 表
+class Problem(db.Model):
+    __tablename__ = 'problems'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String, nullable=False)
+    tag = db.Column(db.String, nullable=False)
+    Uploader = db.Column(db.String, nullable=False)
+    Upload_time = db.Column(db.DateTime, nullable=False)
+
+
+class Tag(db.Model):
+    __tablename__ = 'tags'
+    id = db.Column(db.Integer, primary_key=True)
+    tag_name = db.Column(db.String, nullable=False, unique=True)  # 确保标签唯一
+
+# 获取手机号
+def get_token_phone(token):
+    data = auth.decode_func(token)
+    phone = data['telephone']
+    return phone
+
+# 获取用户名
+def get_token_username(token):
+    data = auth.decode_func(token)
+    username = data.get("username")
+    if username:
+        return username
+    # 如果没有 "username" 字段，可以选择返回默认值 "anonymous"
+    return "anonymous"
+
+@app.route("/")
+def home():
+    return jsonify({
+        "message": "系统API服务器运行正常",
+        "status": 200,
+        "available_endpoints": [
+            "/user/login (POST)",
+            "/user/shop (GET)",
+            "/user/addorder (POST)",
+            "/manager/shop (GET/POST/DELETE)"
+        ]
+    })
+
+# 添加一个简单的健康检查路由
+@app.route("/health")
+def health_check():
+    return jsonify({"status": "OK", "timestamp": datetime.datetime.now().isoformat()})
+
+
+# 用户登录
+@app.route("/user/login", methods=["POST"])
+def user_login():
+    # print(request.json)
+    userTelephone = request.json.get("userTelephone").strip()
+    password = request.json.get("password").strip()
+    sql = text('SELECT * FROM user WHERE telephone = :telephone AND password = :password')
+    params = {'telephone': userTelephone, 'password': password}
+    data = db.session.execute(sql, params).first()
+    # print(data)
+    if data is not None:
+        user = {'id': data[0], 'username': data[1], 'telephone': data[2], 'password': data[3]}
+        # 生成token
+        token = auth.encode_func(user)
+        # print(token)
+        return jsonify({"code": 200, "msg": "登录成功", "token": token, "role": data[4]})
+    else:
+        return jsonify({"code": 1000, "msg": "用户名或密码错误"})
+
+# 获取用户信息
+@app.route("/user/usermsg", methods=["GET"])
+def usermsg():
+    telephone = get_token_phone(request.headers.get('token'))
+    query = text('SELECT username, telephone FROM user WHERE telephone=:telephone')
+    result = db.session.execute(query, {'telephone': telephone}).fetchone()
+
+    if result:
+            data = dict(username=result.username, telephone=result.telephone)
+            return jsonify(status=200, data=data)
+    else:
+        return jsonify(status=404, message="User not found")
+
+
+# 更改密码
+@app.route("/user/pwd_chg", methods=["POST"])
+def user_pwd_chg():
+    try:
+        data = request.get_json()
+        new_pwd = data.get('new_pwd')
+        old_pwd = data.get('old_pwd')
+        token = request.headers.get('token')
+        if not token:
+            return jsonify(status=400, msg='缺少 token'), 400
+
+        phone = get_token_phone(token)
+
+        # 参数化查询，避免使用字符串拼接
+        query = text('SELECT * FROM user WHERE telephone=:phone AND password=:old_pwd')
+        user_data = db.session.execute(query, {"phone": phone, "old_pwd": old_pwd}).fetchall()
+        if not user_data:
+            return jsonify(status=1000, msg="原始密码错误")
+        else:
+            update_query = text('UPDATE user SET password=:new_pwd WHERE telephone=:phone')
+            db.session.execute(update_query, {"new_pwd": new_pwd, "phone": phone})
+            db.session.commit()
+            return jsonify(status=200, msg="修改成功")
+    except Exception as e:
+        db.session.rollback()
+        print("Error in user_pwd_chg:", e)
+        return jsonify(status=500, msg=str(e)), 500
+
+
+# 获取题目接口，从数据库中查询 problems 表
+@app.route("/api/problems", methods=["GET"])
+def get_problems():
+    try:
+        sql = text("SELECT id, content, tag, Uploader, Upload_time FROM problems")
+        result = db.session.execute(sql).fetchall()
+        problems = []
+        for row in result:
+            problems.append({
+                'id': row[0],
+                'content': row[1],
+                'tag': row[2],
+                'Uploader': row[3],
+                'Upload_time': row[4].strftime('%Y-%m-%d %H:%M:%S') if row[4] else None
+            })
+        return jsonify({"status": 200, "data": problems})
+    except Exception as e:
+        return jsonify({"status": 500, "msg": str(e)})
+
+
+# 上传题目接口（POST 方法），用于写入题目数据到 problems 表中
+@app.route("/api/problems", methods=["POST"])
+def add_problem():
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": 400, "message": "No input data provided"}), 400
+
+    content = data.get("content")
+    tag = data.get("tag", "无标签")
+    Uploader = data.get("Uploader", "anonymous")
+    Upload_time_str = data.get("Upload_time")
+
+    # 检查必要字段
+    if not content:
+        return jsonify({"status": 400, "message": "内容不能为空"}), 400
+    if not Upload_time_str:
+        return jsonify({"status": 400, "message": "Upload_time 不能为空"}), 400
+
+    # 将上传时间字符串转换为 datetime 对象
+    try:
+        Upload_time = datetime.datetime.fromisoformat(Upload_time_str)
+    except Exception as e:
+        return jsonify({"status": 400, "message": f"Upload_time 格式错误: {str(e)}"}), 400
+
+    # 查询当前表中的最大 id
+    try:
+        result = db.session.execute(text("SELECT MAX(id) FROM problems")).fetchone()
+        max_id = result[0] if result[0] is not None else 0
+    except Exception as e:
+        return jsonify({"status": 500, "message": f"查询最大ID失败: {str(e)}"}), 500
+
+    new_id = max_id + 1
+
+    # 通过请求头中的 token 来获取当前登录用户的用户名
+    token = request.headers.get("token")
+    username = get_token_username(token)  # 保证这里获取的是正确的用户名
+
+    # 创建新的题目记录时，手动指定 id
+    new_problem = Problem(
+        id=new_id,
+        content=content,
+        tag=tag,
+        Uploader=username,
+        Upload_time=Upload_time
+    )
+
+    try:
+        db.session.add(new_problem)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": 500, "message": f"写入数据库出错: {str(e)}"}), 500
+
+    return jsonify({
+        "status": 200,
+        "message": "题目上传成功",
+        "id": new_problem.id
+    }), 200
+
+
+# 获取所有标签
+@app.route("/api/tags", methods=["GET"])
+def get_tags():
+    try:
+        sql = text("SELECT id, tag_name FROM tags")
+        result = db.session.execute(sql).fetchall()
+        tag_list = [{"id": row[0], "tag_name": row[1]} for row in result]
+        return jsonify({"status": 200, "data": tag_list})
+    except Exception as e:
+        return jsonify({"status": 500, "msg": str(e)})
+
+if __name__ == '__main__':
+    app.run(debug=True, host='127.0.0.1', port=5000)
+    # 开启了debug模式
+\end{lstlisting}
 
 \end{document}
